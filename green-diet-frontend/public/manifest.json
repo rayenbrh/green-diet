@@ -1,0 +1,23 @@
+{
+  "name": "Green Diet Sfax",
+  "short_name": "Green Diet",
+  "description": "Produits sans gluten bio à Sfax, Tunisie",
+  "theme_color": "#2D5A3D",
+  "background_color": "#FAF8F2",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
