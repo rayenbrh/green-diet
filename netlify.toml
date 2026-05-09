@@ -1,15 +1,15 @@
-# Déploiement Netlify — application Vite dans green-diet-frontend
+# Déploiement Netlify — application Vite dans frontend
 # Dans l’UI Netlify : pas besoin de « Base directory » si ce fichier est à la racine du dépôt.
 
 [build]
-  base = "green-diet-frontend"
+  base = "frontend"
   command = "npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# Dépendances : `green-diet-frontend/.npmrc` (legacy-peer-deps) est pris en compte lors du `npm install`.
+# Dépendances : `frontend/.npmrc` (legacy-peer-deps) est pris en compte lors du `npm install`.
 
 # Application React (React Router) : toutes les routes → index.html
 [[redirects]]

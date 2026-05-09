@@ -1,0 +1,21 @@
+# Backend build context = repo root (see docker-compose / backend Dockerfile)
+.git
+**/.git
+
+node_modules
+**/node_modules
+
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+frontend/dist
+frontend/admin/dist
+
+*.md
+!README.md
+
+.DS_Store
+**/*.log
+coverage

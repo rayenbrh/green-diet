@@ -1,0 +1,20 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-page: #f4f6f3;
+  --color-leaf: #4a7c59;
+  --color-deep: #2d5a3d;
+  --color-gold: #c9a227;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-page);
+  color: #1a1a1a;
+}
+
+#root {
+  min-height: 100dvh;
+}
