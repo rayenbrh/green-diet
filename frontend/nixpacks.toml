@@ -1,4 +1,6 @@
 # Nixpacks / Easy Panel — le Dockerfile généré référence $NIXPACKS_PATH ; sans valeur, Docker Build affiche
 # « UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' » (cosmétique, mais bruyant).
+# Dans l’UI Easy Panel : port interne du service frontend = 5177 et variable PORT=5177 (doit correspondre, sinon
+# « Service is not reachable »). Ne pas réutiliser PORT=5000 du backend.
 [variables]
 NIXPACKS_PATH = "/app"

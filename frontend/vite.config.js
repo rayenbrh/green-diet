@@ -2,8 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Ports locaux par défaut : boutique 5177, API 5001 (voir backend/.env.example).
+const previewPort = Number(process.env.PORT) || 5177
+
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true,
+    port: 5177,
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: previewPort,
+  },
   plugins: [
     react(),
     VitePWA({
