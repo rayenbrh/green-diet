@@ -1,0 +1,4 @@
+# Nixpacks / Easy Panel — le Dockerfile généré référence $NIXPACKS_PATH ; sans valeur, Docker Build affiche
+# « UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' » (cosmétique, mais bruyant).
+[variables]
+NIXPACKS_PATH = "/app"
