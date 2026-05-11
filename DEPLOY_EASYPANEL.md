@@ -1,57 +1,72 @@
-# Déploiement Easy Panel — deux services (API + admin, boutique)
+# Déploiement Easy Panel — deux services (API, boutique + admin)
 
-L’**administration** n’est **pas** un service à part : elle est **compilée dans l’image backend** et servie par Express sous **`/admin/`** (même origine que l’API). Vous déployez seulement :
+L’**admin** est servie par **nginx sur le même service que la boutique** : URL du type **`https://votre-frontend…/admin/`**. L’API ne contient plus de build admin dans l’image Docker (plus léger).
 
-1. **Backend** — API `/api` + SPA admin `/admin/`
-2. **Boutique** — PWA dans `frontend/` (nginx)
+1. **Backend** — uniquement l’API (`/api`, `/api/health`).
+2. **Frontend** — boutique + fichiers admin sous **`/admin/`** (un seul build Docker multi-étapes).
 
-Les variables doivent refléter vos **URL publiques HTTPS** (cookies en production ; `COOKIE_SAMESITE=none` seulement si besoin cross-site).
+Les variables doivent refléter vos **URL publiques HTTPS** (`COOKIE_SAMESITE=none` si la boutique et l’API ne sont pas « same-site »).
 
-## 1. Vue d’ensemble
+## 1. Contexte Docker **frontend** (important)
 
-| Service  | Build | Rôle |
-|----------|--------|------|
-| Backend  | `backend/Dockerfile`, contexte **racine** du dépôt | API, `/api/health`, fichiers statiques **`/admin/`** (build Vite de `frontend/admin` avec `VITE_API_URL=/api`) |
-| Boutique | `frontend/Dockerfile`, contexte **`frontend/`** | Site client |
+Le fichier **`frontend/Dockerfile`** attend le contexte de build à la **racine du monorepo** (pas le dossier `frontend/` seul), pour copier `frontend/admin/`.
 
-CORS : origines autorisées = `FRONTEND_URL`, `ADMIN_URL`, `CORS_ORIGINS`. Quand l’admin est uniquement sur **`https://api.../admin/`**, le navigateur envoie `Origin: https://api...` — mettez **`ADMIN_URL`** (et souvent la même valeur pour couvrir l’admin) sur **l’origine de l’API** (ex. `https://api.votredomaine.tn`), pas un troisième domaine « admin ».
+Dans Easy Panel pour le service **frontend** :
 
-## 2. Variables — backend (Easy Panel)
+- **Contexte (répertoire de build)** : racine du dépôt **`.`**
+- **Dockerfile** : `frontend/Dockerfile`
+- **Port interne** : **80** (nginx)
 
-Copier depuis `backend/.env.example`.
+## 2. Variables — backend
 
-- **`FRONTEND_URL`** — origine de la boutique (ex. `https://boutique.votredomaine.tn`).
-- **`ADMIN_URL`** — origine depuis laquelle l’admin est chargée. Ici : **la même que l’API** (ex. `https://api.votredomaine.tn`), car l’admin est sous `/admin/` sur ce host.
-- **`CORS_ORIGINS`** — optionnel (www, préprod, etc.).
-- **`PORT`**, **`NODE_ENV=production`**, **`TRUST_PROXY=1`**, secrets JWT / MongoDB : voir `backend/.env.example`.
-- **`COOKIE_SAMESITE=none`** — seulement si boutique et API ne sont pas « same-site » et que vous avez HTTPS partout.
+- **`FRONTEND_URL`** — origine de la boutique (ex. `https://dokanzemni-frontend-….easypanel.host`).
+- **`ADMIN_URL`** — même valeur que **`FRONTEND_URL`** lorsque l’admin est chargée depuis **`https://frontend…/admin/`** (l’en-tête `Origin` du navigateur est celui du frontend).
+- **`CORS_ORIGINS`** — optionnel.
+- **`PORT`**, **`NODE_ENV=production`**, **`TRUST_PROXY=1`**, MongoDB, JWT : voir `backend/.env.example`.
 
-## 3. Build args — boutique (`frontend/`)
+Pour le service **backend** Easy Panel : contexte **racine du dépôt**, Dockerfile **`backend/Dockerfile`**.
 
-Injectées au **`npm run build`** (build args ou env de l’étape build).
+## 3. Build args — image frontend (boutique + admin)
 
-- **`VITE_API_URL`** — ex. `https://api.votredomaine.tn/api`
-- **`VITE_BACKEND_ORIGIN`** — ex. `https://api.votredomaine.tn`
-- **`VITE_ADMIN_URL`** — ex. **`https://api.votredomaine.tn/admin/`** (redirection après connexion admin depuis la boutique)
+Injectées au build (Vite fige les `VITE_*` dans le JS).
 
-Référence : `frontend/.env.example`.
+- **`VITE_API_URL`** — ex. `https://votre-backend…/api`
+- **`VITE_BACKEND_ORIGIN`** — ex. `https://votre-backend…` (sans `/api`)
+- **`VITE_ADMIN_URL`** — URL **frontend** vers l’admin, ex. **`https://votre-frontend…/admin/`** (redirection après connexion admin depuis la boutique)
 
-## 4. Développement local
+L’étape **admin** du Dockerfile compile `frontend/admin` avec le même **`VITE_API_URL`** (URL absolue vers l’API) pour que le navigateur appelle le backend depuis la page admin.
 
-- `npm run dev` à la racine : API (+ admin en rebuild watch) et boutique Vite.
-- Admin seule en HMR : `cd frontend/admin && npm run dev` (proxy `/api` → voir `frontend/admin/vite.config.js`).
+## 4. Seed uniquement l’admin (sans produits)
+
+À la racine du dépôt ou dans `backend/` (avec `.env` chargé) :
+
+```bash
+npm run seed:admin --prefix backend
+```
+
+Variables optionnelles :
+
+- **`SEED_ADMIN_EMAIL`** (défaut : `admin@greendiet.tn`)
+- **`SEED_ADMIN_PASSWORD`** (défaut : `Admin@2025!`)
+- **`SEED_ADMIN_PHONE`** (défaut : `+21600000001`)
+
+Si l’email existe déjà avec le rôle admin, le mot de passe n’est **pas** modifié. Si l’utilisateur existe en client, il est **promu** admin sans changer le mot de passe.
 
 ## 5. Check-list
 
-1. `GET .../api/health` → JSON `ok`.
-2. Ouvrir **`.../admin/`** sur l’URL du backend → interface admin.
-3. Pas d’erreur CORS depuis la boutique vers l’API.
-4. Si 401 en boucle après login : `COOKIE_SAMESITE` / domaines — voir `backend/.env.example`.
+1. `GET …/api/health` sur le backend → `ok`.
+2. Ouvrir **`https://frontend…/admin/`** → interface admin.
+3. Pas d’erreur CORS : **`ADMIN_URL`** = **`FRONTEND_URL`** quand l’admin est sur le frontend.
+4. Connexion : si cookies bloqués entre sous-domaines, **`COOKIE_SAMESITE=none`** + HTTPS.
 
 ## 6. Docker Compose
 
-`docker compose up --build` : boutique sur le port 80 du service frontend, API + admin sur le service backend (voir `README.md`).
+`docker compose up --build` : le frontend est construit avec le contexte racine ; voir `docker-compose.yml`.
 
-## 7. Fichiers utiles (CORS, cookies, liens)
+## 7. Seed catalogue complet (optionnel)
 
-`backend/src/config/corsOptions.js`, `backend/src/config/env.js`, `backend/src/controllers/auth.controller.js`, `backend/src/server.js`, `frontend/src/lib/backendOrigin.js` (`VITE_ADMIN_URL` optionnelle ; sinon `.../admin/` sur `VITE_BACKEND_ORIGIN`).
+```bash
+npm run seed --prefix backend
+```
+
+⚠️ Efface et recrée catégories et produits ; ne pas lancer en prod si vous avez déjà des données.

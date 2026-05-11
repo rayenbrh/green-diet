@@ -73,20 +73,22 @@ export function logStartupSummary(opts) {
     envPresent(env.TWILIO_WHATSAPP_FROM)
   console.log(`${twilio ? '[boot] ✓' : '[boot] ✗'} Twilio WhatsApp : ${twilio ? 'configuré' : 'non configuré'}`)
 
-  console.log('[boot] Admin SPA (fichiers statiques /admin) :')
+  console.log('[boot] Admin SPA sur cette API (/admin) — chemins locaux :')
   adminCandidates.forEach(({ path: p, ok }) => {
     console.log(`  ${flag(ok)} ${p}`)
   })
   if (adminDist) {
-    console.log(`[boot] ✓ Admin servi depuis : ${adminDist}`)
+    console.log(`[boot] ✓ Admin servi aussi par l’API : ${adminDist}`)
   } else {
-    console.log('[boot] ✗ Aucun dossier admin valide — /admin renverra 503 jusqu’à un build (voir chemins ci-dessus)')
+    console.log(
+      '[boot] ℹ️ Aucun build admin dans l’image API (normal si l’admin est servie par le frontend sous /admin/).',
+    )
   }
 
   console.log(`[boot] WHATSAPP_PHONE (liens wa.me) : ${env.WHATSAPP_PHONE}`)
   console.log(`[boot] STORE_NAME : ${env.STORE_NAME}`)
   console.log('================================================')
   console.log(`[boot] API prête — http://localhost:${env.PORT}  health: /api/health`)
-  if (adminDist) console.log(`[boot] Admin    — http://localhost:${env.PORT}/admin/`)
+  if (adminDist) console.log(`[boot] Admin (API) — http://localhost:${env.PORT}/admin/`)
   console.log('')
 }

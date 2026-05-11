@@ -1,6 +1,6 @@
 # Green Diet — plateforme e-commerce sans gluten (Sfax)
 
-Monorepo : boutique publique (`frontend`), administration (`frontend/admin`, **build servi par l’API** sous `/admin/`, pas de service déployé à part), API Express + MongoDB (`backend`).
+Monorepo : boutique publique (`frontend`), administration (`frontend/admin`, en **production Docker** servie sous **`/admin/`** sur la **même URL que la boutique**), API Express + MongoDB (`backend`). En développement local, l’API peut encore servir `/admin/` si un build admin est présent dans `admin-dist` ou `frontend/admin/dist`.
 
 ## Prérequis
 
@@ -32,7 +32,7 @@ Cela lance en parallèle :
 
 ### Connexion administrateur depuis la boutique
 
-Sur **`/connexion`**, utilisez les identifiants admin (après **`npm run seed`** dans `backend`) : redirection vers l’URL admin (`VITE_ADMIN_URL` ou `http://localhost:5001/admin/` en local si l’API tourne sur le port 5001). Le cookie refresh est alors sur la même origine que l’API lorsque l’admin est servie par Express.
+Sur **`/connexion`**, identifiants admin (après **`npm run seed:admin`** ou **`npm run seed`**) : redirection vers **`VITE_ADMIN_URL`**. En dev par défaut : `http://localhost:5001/admin/` (Express). En prod Docker : URL du **frontend** + `/admin/` (voir `frontend/.env.example`).
 
 ### Frontend boutique (.env)
 
@@ -44,7 +44,8 @@ cp .env.example .env
 À définir notamment :
 
 - `VITE_API_URL=http://localhost:5001/api`
-- `VITE_BACKEND_ORIGIN=http://localhost:5001` (pour la redirection admin si `VITE_ADMIN_URL` n’est pas défini)
+- `VITE_BACKEND_ORIGIN=http://localhost:5001`
+- `VITE_ADMIN_URL=http://localhost:5177/admin/` (ex. : même origine que la boutique si tu sers le build admin depuis Vite preview ou nginx)
 
 ### Admin (mode dev isolé — optionnel)
 
@@ -72,7 +73,7 @@ Sans `vite build --watch` pour l’admin, le serveur affiche un avertissement ju
 Variables CORS (voir `backend/.env.example`) :
 
 - **`FRONTEND_URL`** — origine de la boutique (dev : `http://localhost:5177` selon votre port Vite)
-- **`ADMIN_URL`** — origine pour CORS quand on ouvre l’admin : **souvent la même que l’API** (`https://api...`) car l’admin est sous `/admin/` sur le backend
+- **`ADMIN_URL`** — origine du navigateur pour l’**interface admin** : **même valeur que `FRONTEND_URL`** si l’admin est sous `https://boutique…/admin/` ; sinon origine où `/admin/` est réellement servi (ex. API seule si tu n’utilises pas l’image frontend multi-étapes)
 - **`CORS_ORIGINS`** — optionnel, origines supplémentaires séparées par des virgules
 
 ### Données de démo
@@ -82,34 +83,38 @@ cd backend
 npm run seed
 ```
 
-Administrateur après seed : **`admin@greendiet.tn`** / **`Admin@2025!`**.
+Catalogue + admin par défaut : **`admin@greendiet.tn`** / **`Admin@2025!`**.
+
+Admin **sans** recréer les produits :
+
+```bash
+npm run seed:admin --prefix backend
+```
 
 ## Déploiement (Easy Panel ou Docker)
 
-Guide détaillé (deux services Easy Panel : **API + admin** et **boutique**, CORS, build args) : **[`DEPLOY_EASYPANEL.md`](./DEPLOY_EASYPANEL.md)**.
+Guide détaillé (boutique + admin sur le **frontend**, API seule sur le **backend**) : **[`DEPLOY_EASYPANEL.md`](./DEPLOY_EASYPANEL.md)**.
 
 ### Deux services (recommandé)
 
-Déployez l’**API** (image `backend/Dockerfile`) et la **boutique**. L’admin est **toujours incluse** dans l’image backend : build Vite de `frontend/admin` → fichiers statiques sous **`/admin/`** sur la même origine que l’API.
+- **Backend** : image `backend/Dockerfile` (API uniquement). Contexte de build : **racine du dépôt** `.`
+- **Frontend** : image `frontend/Dockerfile` (boutique + build `frontend/admin` copié sous **`/admin/`** sur nginx). Contexte de build : **racine du dépôt** `.` (obligatoire), pas le dossier `frontend/` seul.
 
 ### Backend (Easy Panel)
 
-- **Type** : Dockerfile
-- **Répertoire du dépôt** : racine du monorepo
 - **Dockerfile** : `backend/Dockerfile`
-- **Contexte de build** : **racine du dépôt** (`.`). Ne pas utiliser `backend/` seul comme contexte : le Dockerfile copie `frontend/admin` pour builder l’admin.
-- **Port** : `5000` (valeur par défaut dans l’image) ou celui défini par `PORT` / votre reverse proxy
-- Variables d’environnement : `backend/.env.example` — notamment `FRONTEND_URL`, `ADMIN_URL`, `CORS_ORIGINS`, `TRUST_PROXY`, `COOKIE_SAMESITE` si besoin.
+- **Contexte** : racine du monorepo (`.`).
+- **Port** : celui exposé par le service (souvent `5000` dans l’image).
+- Variables : `backend/.env.example` — en prod avec admin sur le frontend : **`ADMIN_URL` = `FRONTEND_URL`** (même origine que la boutique).
 
-### Frontend boutique (Easy Panel)
+### Frontend (Easy Panel)
 
-- **Type** : Dockerfile dans `frontend/`, contexte **`frontend/`**
-- **Build args** : `VITE_API_URL`, `VITE_BACKEND_ORIGIN`, `VITE_ADMIN_URL` = URL **`.../admin/`** sur le **même host que l’API** (ex. `https://api.mondomaine.tn/admin/`).
-- **Port** : `80` (nginx dans l’image) ou selon votre configuration.
+- **Dockerfile** : `frontend/Dockerfile`
+- **Contexte** : racine du monorepo (`.`).
+- **Build args** : `VITE_API_URL`, `VITE_BACKEND_ORIGIN`, **`VITE_ADMIN_URL`** = URL **frontend** + `/admin/` (ex. `https://ton-frontend…/admin/`).
+- **Port interne** : **80**
 
 ### Docker Compose
-
-Le build **Docker du backend** compile aussi **`frontend/admin`** et copie les fichiers statiques dans l’image (`admin-dist`).
 
 ```bash
 cp backend/.env.example backend/.env
@@ -117,18 +122,19 @@ docker compose up --build
 ```
 
 - Boutique : http://localhost  
-- **Admin** : **http://localhost:5000/admin/**  
+- **Admin** : **http://localhost/admin/**  
 - API : http://localhost:5000/api/health  
 
-Seed : `docker compose exec backend node src/seeders/seed.js`
+Seed admin : `docker compose exec backend npm run seed:admin`  
+Seed complet (efface produits/catégories) : `docker compose exec backend npm run seed`
 
 ## Structure des dossiers
 
 | Dossier | Rôle |
 |--------|------|
-| `backend/src` | API REST, modèles Mongoose, sert **`/admin`** depuis `admin-dist` ou `frontend/admin/dist` |
-| `frontend` | PWA cliente |
-| `frontend/admin` | Sources Vite de l’admin (`base` `/admin/` en prod dans l’image API). Build → `frontend/admin/dist`, servi par Express. |
+| `backend/src` | API REST, Mongoose ; en prod Docker **sans** fichiers admin dans l’image |
+| `frontend` | PWA cliente ; image Docker inclut aussi **`/admin/`** (build admin) |
+| `frontend/admin` | Sources Vite de l’admin (`base` `/admin/`). Build copié dans l’image **frontend** sous `html/admin/` |
 
 ## Sécurité (rappels)
 
