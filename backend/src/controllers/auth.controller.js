@@ -3,13 +3,16 @@ import { User } from '../models/User.js'
 import { env } from '../config/env.js'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.utils.js'
 
-const cookieOpts = () => ({
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  path: '/',
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-})
+const cookieOpts = () => {
+  const sameSite = env.COOKIE_SAMESITE === 'none' ? 'none' : 'lax'
+  return {
+    httpOnly: true,
+    secure: sameSite === 'none' || env.NODE_ENV === 'production',
+    sameSite,
+    path: '/',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  }
+}
 
 function userPayload(u) {
   return {

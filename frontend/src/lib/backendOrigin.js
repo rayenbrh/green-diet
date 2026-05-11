@@ -26,8 +26,13 @@ export function getBackendOrigin() {
   return ''
 }
 
-/** URL complète vers l’SPA admin servie par Express */
+/** URL complète vers l’admin (Express /admin/ ou service séparé si `VITE_ADMIN_URL`). */
 export function getAdminDashboardUrl() {
+  const fromEnv = import.meta.env.VITE_ADMIN_URL?.trim?.()
+  if (fromEnv) {
+    const u = fromEnv.replace(/\/?$/, '')
+    return fromEnv.endsWith('/') ? fromEnv : `${u}/`
+  }
   const origin = getBackendOrigin()
   if (!origin) return `${typeof window !== 'undefined' ? window.location.origin : ''}/admin/`
   return `${origin}/admin/`
