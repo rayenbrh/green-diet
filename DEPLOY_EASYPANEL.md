@@ -9,12 +9,12 @@ Les variables doivent refléter vos **URL publiques HTTPS** (`COOKIE_SAMESITE=no
 
 ## 1. Contexte Docker **frontend** (important)
 
-Le fichier **`frontend/Dockerfile`** attend le contexte de build à la **racine du monorepo** (pas le dossier `frontend/` seul), pour copier `frontend/admin/`.
+Le **`Dockerfile`** du dossier **`frontend/`** suppose que le **contexte de build est le dossier `frontend`** lui-même (celui qui contient `package.json`, le sous-dossier **`admin/`** et **`nginx.conf`**). C’est le cas par défaut si Easy Panel build depuis `…/frontend`.
 
 Dans Easy Panel pour le service **frontend** :
 
-- **Contexte (répertoire de build)** : racine du dépôt **`.`**
-- **Dockerfile** : `frontend/Dockerfile`
+- **Contexte** : répertoire **`frontend`** du dépôt (pas la racine du monorepo).
+- **Dockerfile** : `Dockerfile` (dans ce même dossier).
 - **Port interne** : **80** (nginx)
 
 ## 2. Variables — backend
@@ -24,7 +24,7 @@ Dans Easy Panel pour le service **frontend** :
 - **`CORS_ORIGINS`** — optionnel.
 - **`PORT`**, **`NODE_ENV=production`**, **`TRUST_PROXY=1`**, MongoDB, JWT : voir `backend/.env.example`.
 
-Pour le service **backend** Easy Panel : contexte **racine du dépôt**, Dockerfile **`backend/Dockerfile`**.
+Pour le service **backend** Easy Panel : contexte **racine du dépôt** `.`, Dockerfile **`backend/Dockerfile`**.
 
 ## 3. Build args — image frontend (boutique + admin)
 

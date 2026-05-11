@@ -1,22 +1,21 @@
-# Build depuis la RACINE du dépôt (obligatoire pour inclure frontend/admin) :
-#   docker build -f frontend/Dockerfile .
-# Easy Panel : répertoire du contexte = racine du repo, Dockerfile = frontend/Dockerfile
+# Contexte Docker = ce dossier `frontend/` (là où se trouvent package.json, admin/, nginx.conf).
+# Easy Panel : répertoire de build = dossier du service frontend (ex. …/code/frontend), Dockerfile = Dockerfile.
 
 FROM node:20-alpine AS admin-build
 WORKDIR /admin
-COPY frontend/admin/package.json frontend/admin/package-lock.json ./
+COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
-COPY frontend/admin/ ./
+COPY admin/ ./
 ARG VITE_API_URL=https://api.votredomaine.tn/api
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 FROM node:20-alpine AS shop-build
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json ./
-COPY frontend/.npmrc ./
+COPY package.json package-lock.json ./
+COPY .npmrc ./
 RUN npm ci
-COPY frontend/ ./
+COPY . .
 ARG VITE_API_URL=https://api.votredomaine.tn/api
 ARG VITE_BACKEND_ORIGIN=https://api.votredomaine.tn
 ARG VITE_ADMIN_URL=https://boutique.votredomaine.tn/admin/
@@ -28,5 +27,5 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=shop-build /app/dist /usr/share/nginx/html
 COPY --from=admin-build /admin/dist /usr/share/nginx/html/admin
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

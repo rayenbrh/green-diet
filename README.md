@@ -98,7 +98,7 @@ Guide détaillé (boutique + admin sur le **frontend**, API seule sur le **backe
 ### Deux services (recommandé)
 
 - **Backend** : image `backend/Dockerfile` (API uniquement). Contexte de build : **racine du dépôt** `.`
-- **Frontend** : image `frontend/Dockerfile` (boutique + build `frontend/admin` copié sous **`/admin/`** sur nginx). Contexte de build : **racine du dépôt** `.` (obligatoire), pas le dossier `frontend/` seul.
+- **Frontend** : `frontend/Dockerfile` (boutique + dossier **`admin/`** du même répertoire, servi sous **`/admin/`** sur nginx). **Contexte Docker = dossier `frontend/`** (obligatoire pour les chemins `COPY`).
 
 ### Backend (Easy Panel)
 
@@ -109,8 +109,8 @@ Guide détaillé (boutique + admin sur le **frontend**, API seule sur le **backe
 
 ### Frontend (Easy Panel)
 
-- **Dockerfile** : `frontend/Dockerfile`
-- **Contexte** : racine du monorepo (`.`).
+- **Dockerfile** : `Dockerfile` dans le dossier **`frontend/`**
+- **Contexte de build** : le dossier **`frontend/`** (même niveau que `package.json` et `admin/`), **pas** la racine du repo.
 - **Build args** : `VITE_API_URL`, `VITE_BACKEND_ORIGIN`, **`VITE_ADMIN_URL`** = URL **frontend** + `/admin/` (ex. `https://ton-frontend…/admin/`).
 - **Port interne** : **80**
 
