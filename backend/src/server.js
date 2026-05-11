@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 import { connectDb } from './config/db.js'
 import { env } from './config/env.js'
 import { corsOptions } from './config/corsOptions.js'
+import { logStartupSummary } from './config/startupLog.js'
 import { apiLimiter } from './middleware/rateLimiter.middleware.js'
 import { errorHandler } from './middleware/errorHandler.middleware.js'
 import analyticsRoutes from './routes/analytics.routes.js'
@@ -28,7 +29,7 @@ app.use(helmet())
 app.use(cors(corsOptions))
 app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
-if (env.NODE_ENV === 'development') app.use(morgan('dev'))
+app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'tiny'))
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } })
@@ -43,21 +44,31 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/analytics', analyticsRoutes)
 
 /** Ne pas se fier à process.cwd(); le build admin peut apparaître après le démarrage de l’API. */
-function resolveAdminDist() {
-  const candidates = [
-    path.join(__dirname, '..', 'admin-dist'),
-    path.join(__dirname, '..', '..', 'frontend', 'admin', 'dist'),
-    path.join(process.cwd(), 'admin-dist'),
-    path.join(process.cwd(), 'frontend', 'admin', 'dist'),
-    path.join(process.cwd(), '..', 'frontend', 'admin', 'dist'),
-  ]
-  for (const p of candidates) {
+const ADMIN_DIST_CANDIDATES = [
+  path.join(__dirname, '..', 'admin-dist'),
+  path.join(__dirname, '..', '..', 'frontend', 'admin', 'dist'),
+  path.join(process.cwd(), 'admin-dist'),
+  path.join(process.cwd(), 'frontend', 'admin', 'dist'),
+  path.join(process.cwd(), '..', 'frontend', 'admin', 'dist'),
+]
+
+function getAdminDistDiagnostics() {
+  return ADMIN_DIST_CANDIDATES.map((p) => {
+    const abs = path.resolve(p)
+    const indexPath = path.join(abs, 'index.html')
+    let ok = false
     try {
-      const indexPath = path.join(p, 'index.html')
-      if (fs.existsSync(indexPath)) return path.resolve(p)
+      ok = fs.existsSync(indexPath)
     } catch {
-      /* noop */
+      ok = false
     }
+    return { path: abs, ok }
+  })
+}
+
+function resolveAdminDist() {
+  for (const { path: p, ok } of getAdminDistDiagnostics()) {
+    if (ok) return p
   }
   return null
 }
@@ -105,13 +116,11 @@ app.use(errorHandler)
 connectDb()
   .then(() => {
     app.listen(env.PORT, () => {
-      console.log(`API http://localhost:${env.PORT}`)
-      const boot = resolveAdminDist()
-      if (boot) console.log(`Admin SPA → http://localhost:${env.PORT}/admin/ (${boot})`)
-      else
-        console.warn(
-          '[admin] Aucun dist au début : OK si `vite build --watch` tourne — /admin sera servi après le premier build.',
-        )
+      const adminDist = resolveAdminDist()
+      logStartupSummary({
+        adminDist,
+        adminCandidates: getAdminDistDiagnostics(),
+      })
     })
   })
   .catch((err) => {

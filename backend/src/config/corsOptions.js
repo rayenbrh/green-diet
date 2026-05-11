@@ -26,6 +26,11 @@ function buildAllowedOrigins() {
 
 const allowedOrigins = buildAllowedOrigins()
 
+/** Pour les journaux de démarrage (origines CORS autorisées en prod). */
+export function getCorsAllowedOrigins() {
+  return [...allowedOrigins].sort()
+}
+
 export const corsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true)
