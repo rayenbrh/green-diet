@@ -1,14 +1,24 @@
 import { Router } from 'express'
 import * as admin from '../controllers/admin.controller.js'
 import { adminOnly } from '../middleware/adminOnly.middleware.js'
+import { upload } from '../utils/upload.utils.js'
 
 const r = Router()
 r.use(adminOnly)
 
+function maybeMultipart(req, res, next) {
+  const ct = req.headers['content-type'] || ''
+  if (ct.includes('multipart/form-data')) {
+    return upload.array('images', 4)(req, res, next)
+  }
+  next()
+}
+
+r.get('/cleanup-uploads', admin.runCleanupUploads)
 r.get('/products', admin.listAdminProducts)
 r.get('/products/:id', admin.getAdminProduct)
-r.post('/products', admin.createProduct)
-r.patch('/products/:id', admin.patchProduct)
+r.post('/products', maybeMultipart, admin.createProduct)
+r.patch('/products/:id', maybeMultipart, admin.patchProduct)
 r.delete('/products/:id', admin.deleteProduct)
 r.patch('/products/:id/toggle', admin.toggleProduct)
 

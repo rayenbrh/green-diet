@@ -7,7 +7,6 @@ import { CartProvider } from './context/CartContext'
 import { BRAND_LOGO_SRC } from './constants/brand'
 import Navbar from './components/layout/Navbar'
 import CartDrawer from './components/ui/CartDrawer'
-import PWAInstallBanner from './components/ui/PWAInstallBanner'
 import AppToaster from './components/ui/Toast'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -155,7 +154,6 @@ export default function App() {
           <Navbar />
           <AppToaster />
           <CartDrawer />
-          <PWAInstallBanner />
           <AnimatedRoutes />
         </BrowserRouter>
       </CartProvider>

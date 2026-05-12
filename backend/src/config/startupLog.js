@@ -60,12 +60,7 @@ export function logStartupSummary(opts) {
   }
   console.log(`[boot] FRONTEND_URL (brut) : ${env.FRONTEND_URL}`)
   console.log(`[boot] ADMIN_URL (brut)    : ${env.ADMIN_URL}`)
-
-  const cloud =
-    envPresent(env.CLOUDINARY_CLOUD_NAME) &&
-    envPresent(env.CLOUDINARY_API_KEY) &&
-    envPresent(env.CLOUDINARY_API_SECRET)
-  console.log(`${cloud ? '[boot] ✓' : '[boot] ✗'} Cloudinary (upload images) : ${cloud ? 'configuré' : 'non configuré'}`)
+  console.log('[boot] Images produits : stockage local sous /uploads/')
 
   const twilio =
     envPresent(env.TWILIO_ACCOUNT_SID) &&

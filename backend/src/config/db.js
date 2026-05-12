@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { cleanupUnusedUploads } from '../utils/cleanupUploads.js'
 import { env } from './env.js'
 
 function redactMongoUri(uri) {
@@ -30,4 +31,10 @@ export async function connectDb() {
   console.log(
     `${ready ? '[mongo] ✓' : '[mongo] ✗'} Connecté — hôte: ${host || '—'}  base: « ${name} »  readyState=${mongoose.connection.readyState} (1=connecté)`,
   )
+
+  try {
+    await cleanupUnusedUploads()
+  } catch (e) {
+    console.error('[uploads] Nettoyage au démarrage :', e?.message || e)
+  }
 }

@@ -18,3 +18,121 @@ body {
 #root {
   min-height: 100dvh;
 }
+
+.admin-main {
+  margin-left: 0;
+}
+@media (min-width: 768px) {
+  .admin-main {
+    margin-left: 240px;
+  }
+}
+@media (max-width: 767px) {
+  .admin-main {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-table-wrap table {
+  min-width: 640px;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+}
+@media (max-width: 1023px) {
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.admin-two-col {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 24px;
+}
+@media (max-width: 767px) {
+  .admin-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-charts-row {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (max-width: 767px) {
+  .admin-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .admin-toggle-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.admin-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 0 12px;
+}
+.admin-filters-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-fab {
+  display: none;
+}
+@media (max-width: 767px) {
+  .admin-fab {
+    display: flex;
+    position: fixed;
+    bottom: 24px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    background: #2d5a3d;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 26px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 60;
+    box-shadow: 0 4px 20px rgba(45, 90, 61, 0.25);
+    text-decoration: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-preview-col {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-input {
+    font-size: 16px !important;
+  }
+}

@@ -1,5 +1,6 @@
 import { Category } from '../models/Category.js'
 import { Product } from '../models/Product.js'
+import { attachPublicImageUrls } from '../utils/upload.utils.js'
 
 export async function listCategories(_req, res, next) {
   try {
@@ -40,6 +41,7 @@ export async function listProducts(req, res, next) {
     else if (sort === 'newest') q = q.sort({ createdAt: -1 })
     else q = q.sort({ orderCount: -1, rating: -1 })
     const [products, total] = await Promise.all([q.skip(skip).limit(Number(limit)), Product.countDocuments(filter)])
+    products.forEach((p) => attachPublicImageUrls(p))
     res.json({
       success: true,
       data: {
@@ -64,6 +66,7 @@ export async function getProductBySlug(req, res, next) {
       .populate('category', 'name slug emoji')
       .lean()
     if (!p) return res.status(404).json({ success: false, message: 'Produit introuvable' })
+    attachPublicImageUrls(p)
     res.json({ success: true, data: p })
   } catch (e) {
     next(e)

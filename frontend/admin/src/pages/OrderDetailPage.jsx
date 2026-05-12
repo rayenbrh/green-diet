@@ -92,7 +92,8 @@ export default function OrderDetailPage() {
         <div className="space-y-4 lg:col-span-3">
           <section className="rounded-xl border border-[rgba(74,124,89,0.12)] bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-[#374151]">Articles</h2>
-            <table className="mt-4 w-full text-sm">
+            <div className="admin-table-wrap mt-4">
+            <table className="w-full text-sm">
               <tbody className="divide-y divide-[rgba(74,124,89,0.08)]">
                 {(order.items || []).map((it, i) => (
                   <tr key={i}>
@@ -108,6 +109,7 @@ export default function OrderDetailPage() {
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="mt-4 space-y-1 border-t border-[rgba(74,124,89,0.1)] pt-4 text-sm">
               <div className="flex justify-between">
                 <span>Sous-total</span>

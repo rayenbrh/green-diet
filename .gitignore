@@ -27,3 +27,7 @@ Thumbs.db
 # Misc
 coverage/
 *.local
+
+# Uploads locaux (images produits)
+backend/uploads/*
+!backend/uploads/.gitkeep

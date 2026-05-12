@@ -78,7 +78,7 @@ export default function ProductsPage() {
         <h1 className="text-2xl font-semibold text-[#2d5a3d]">Produits ({filtered.length})</h1>
         <Link
           to="/products/new"
-          className="rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-[#2d2810] hover:opacity-95"
+          className="hidden rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-[#2d2810] hover:opacity-95 md:inline-flex"
         >
           + Ajouter un produit
         </Link>
@@ -110,7 +110,7 @@ export default function ProductsPage() {
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-[rgba(74,124,89,0.12)] bg-white shadow-sm">
+      <div className="admin-table-wrap rounded-xl border border-[rgba(74,124,89,0.12)] bg-white shadow-sm">
         <table className="w-full min-w-[900px] text-left text-sm">
           <thead className="border-b border-[rgba(74,124,89,0.1)] bg-[#f9faf9] text-xs uppercase text-[#6b7280]">
             <tr>
@@ -189,6 +189,10 @@ export default function ProductsPage() {
           </tbody>
         </table>
       </div>
+
+      <Link to="/products/new" className="admin-fab" aria-label="Nouveau produit">
+        +
+      </Link>
 
       <ConfirmModal
         open={Boolean(deleteId)}

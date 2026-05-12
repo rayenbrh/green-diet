@@ -27,6 +27,7 @@ if (env.TRUST_PROXY) app.set('trust proxy', 1)
 
 app.use(helmet())
 app.use(cors(corsOptions))
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'tiny'))

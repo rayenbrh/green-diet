@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
 
       <div className="rounded-xl border border-[rgba(74,124,89,0.12)] bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-sm font-semibold text-[#374151]">Top clients (dépenses)</h2>
-        <div className="overflow-x-auto">
+        <div className="admin-table-wrap">
           <table className="w-full min-w-[600px] text-left text-sm">
             <thead className="border-b text-xs uppercase text-[#9ca3af]">
               <tr>

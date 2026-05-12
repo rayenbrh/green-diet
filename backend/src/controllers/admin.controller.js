@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import path from 'path'
 import validator from 'validator'
 import { Category } from '../models/Category.js'
 import { Order } from '../models/Order.js'
@@ -6,13 +7,38 @@ import { Product } from '../models/Product.js'
 import { User } from '../models/User.js'
 import { slugifyText } from '../utils/slugify.utils.js'
 import { buildWhatsAppUrl, buildNewOrderMessage } from '../utils/whatsapp.utils.js'
-import { env } from '../config/env.js'
+import { cleanupUnusedUploads } from '../utils/cleanupUploads.js'
+import { attachPublicImageUrls, deleteFile, stripToFilename } from '../utils/upload.utils.js'
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered']
+
+function boolFromBody(v, defaultVal = false) {
+  if (v === undefined || v === '') return defaultVal
+  return v === true || v === 'true'
+}
+
+function parseTagsField(raw) {
+  if (raw == null || raw === '') return []
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try {
+      const j = JSON.parse(raw)
+      if (Array.isArray(j)) return j
+    } catch {
+      /* noop */
+    }
+    return raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  return []
+}
 
 export async function listAdminProducts(_req, res, next) {
   try {
     const products = await Product.find().populate('category', 'name slug').sort({ createdAt: -1 }).lean()
+    products.forEach((p) => attachPublicImageUrls(p))
     res.json({ success: true, data: products })
   } catch (e) {
     next(e)
@@ -23,6 +49,7 @@ export async function getAdminProduct(req, res, next) {
   try {
     const p = await Product.findById(req.params.id).populate('category').lean()
     if (!p) return res.status(404).json({ success: false, message: 'Produit introuvable' })
+    attachPublicImageUrls(p)
     res.json({ success: true, data: p })
   } catch (e) {
     next(e)
@@ -31,6 +58,35 @@ export async function getAdminProduct(req, res, next) {
 
 export async function createProduct(req, res, next) {
   try {
+    const ct = req.headers['content-type'] || ''
+    if (ct.includes('multipart/form-data')) {
+      const b = req.body
+      const files = req.files || []
+      const images = files.map((f) => f.filename)
+      const product = await Product.create({
+        name: validator.escape(String(b.name || '')),
+        nameAr: b.nameAr ? validator.escape(String(b.nameAr)) : '',
+        category: b.category,
+        description: validator.escape(String(b.description || '')),
+        descriptionLong: b.descriptionLong ? validator.escape(String(b.descriptionLong)) : '',
+        price: Number(b.price),
+        comparePrice: b.comparePrice != null && b.comparePrice !== '' ? Number(b.comparePrice) : undefined,
+        weight: b.weight,
+        emoji: b.emoji || '🌿',
+        bgColor: b.bgColor || '#FAF8F2',
+        images,
+        tags: parseTagsField(b.tags),
+        isAvailable: boolFromBody(b.isAvailable, true),
+        isNew: boolFromBody(b.isNew, false),
+        isBestSeller: boolFromBody(b.isBestSeller, false),
+        isFeatured: boolFromBody(b.isFeatured, false),
+        stock: Number(b.stock ?? 999),
+      })
+      const p = await Product.findById(product._id).populate('category').lean()
+      attachPublicImageUrls(p)
+      return res.status(201).json({ success: true, data: p })
+    }
+
     const body = req.body
     const product = await Product.create({
       name: validator.escape(body.name),
@@ -52,6 +108,7 @@ export async function createProduct(req, res, next) {
       stock: Number(body.stock ?? 999),
     })
     const p = await Product.findById(product._id).populate('category').lean()
+    attachPublicImageUrls(p)
     res.status(201).json({ success: true, data: p })
   } catch (e) {
     next(e)
@@ -81,6 +138,57 @@ const PRODUCT_PATCH_ALLOWED = [
 
 export async function patchProduct(req, res, next) {
   try {
+    if ((req.headers['content-type'] || '').includes('multipart/form-data')) {
+      const oldProduct = await Product.findById(req.params.id)
+      if (!oldProduct) return res.status(404).json({ success: false, message: 'Introuvable' })
+
+      let kept = []
+      try {
+        kept = JSON.parse(req.body.existingImages || '[]')
+        if (!Array.isArray(kept)) kept = []
+      } catch {
+        kept = []
+      }
+      kept = kept.map((k) => stripToFilename(k) || path.basename(String(k))).filter(Boolean)
+
+      const newFiles = (req.files || []).map((f) => f.filename)
+      const oldFilenames = (oldProduct.images || []).map(
+        (img) => stripToFilename(img) || path.basename(String(img)),
+      )
+      const toDelete = oldFilenames.filter((fn) => fn && !kept.includes(fn))
+      toDelete.forEach((fn) => deleteFile(fn))
+
+      const b = req.body
+      const update = {
+        images: [...kept, ...newFiles],
+        updatedAt: new Date(),
+      }
+      if (b.name !== undefined) update.name = validator.escape(String(b.name))
+      if (b.nameAr !== undefined) update.nameAr = b.nameAr ? validator.escape(String(b.nameAr)) : ''
+      if (b.category !== undefined) update.category = b.category
+      if (b.description !== undefined) update.description = validator.escape(String(b.description))
+      if (b.descriptionLong !== undefined)
+        update.descriptionLong = b.descriptionLong ? validator.escape(String(b.descriptionLong)) : ''
+      if (b.price !== undefined) update.price = Number(b.price)
+      if (b.comparePrice !== undefined) update.comparePrice = b.comparePrice === '' ? undefined : Number(b.comparePrice)
+      if (b.weight !== undefined) update.weight = b.weight
+      if (b.emoji !== undefined) update.emoji = b.emoji
+      if (b.bgColor !== undefined) update.bgColor = b.bgColor
+      if (b.tags !== undefined) update.tags = parseTagsField(b.tags)
+      if (b.stock !== undefined) update.stock = Number(b.stock)
+      if (b.isAvailable !== undefined) update.isAvailable = boolFromBody(b.isAvailable, true)
+      if (b.isNew !== undefined) update.isNew = boolFromBody(b.isNew, false)
+      if (b.isBestSeller !== undefined) update.isBestSeller = boolFromBody(b.isBestSeller, false)
+      if (b.isFeatured !== undefined) update.isFeatured = boolFromBody(b.isFeatured, false)
+      if (b.slug !== undefined) update.slug = validator.escape(String(b.slug))
+      if (b.name !== undefined && (b.slug === undefined || b.slug === '')) update.slug = slugifyText(b.name)
+
+      const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true }).populate('category').lean()
+      if (!product) return res.status(404).json({ success: false, message: 'Introuvable' })
+      attachPublicImageUrls(product)
+      return res.json({ success: true, data: product })
+    }
+
     const body = {}
     for (const k of PRODUCT_PATCH_ALLOWED) {
       if (req.body[k] === undefined) continue
@@ -103,6 +211,7 @@ export async function patchProduct(req, res, next) {
     body.updatedAt = new Date()
     const product = await Product.findByIdAndUpdate(req.params.id, body, { new: true }).populate('category').lean()
     if (!product) return res.status(404).json({ success: false, message: 'Introuvable' })
+    attachPublicImageUrls(product)
     res.json({ success: true, data: product })
   } catch (e) {
     next(e)
@@ -111,6 +220,12 @@ export async function patchProduct(req, res, next) {
 
 export async function deleteProduct(req, res, next) {
   try {
+    const p = await Product.findById(req.params.id)
+    if (!p) return res.status(404).json({ success: false, message: 'Introuvable' })
+    for (const img of p.images || []) {
+      const fn = stripToFilename(img) || (typeof img === 'string' ? path.basename(img) : null)
+      if (fn) deleteFile(fn)
+    }
     await Product.findByIdAndUpdate(req.params.id, { isAvailable: false })
     res.json({ success: true, message: 'Produit désactivé' })
   } catch (e) {
@@ -124,7 +239,18 @@ export async function toggleProduct(req, res, next) {
     if (!p) return res.status(404).json({ success: false, message: 'Introuvable' })
     p.isAvailable = !p.isAvailable
     await p.save()
-    res.json({ success: true, data: p })
+    const data = p.toObject({ virtuals: true })
+    attachPublicImageUrls(data)
+    res.json({ success: true, data })
+  } catch (e) {
+    next(e)
+  }
+}
+
+export async function runCleanupUploads(_req, res, next) {
+  try {
+    const result = await cleanupUnusedUploads()
+    res.json({ success: true, data: result })
   } catch (e) {
     next(e)
   }

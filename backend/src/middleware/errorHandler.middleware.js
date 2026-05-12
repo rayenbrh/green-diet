@@ -22,6 +22,12 @@ export function errorHandler(err, req, res, _next) {
   } else if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     status = 401
     message = 'Session invalide ou expirée'
+  } else if (err.code === 'LIMIT_FILE_SIZE') {
+    status = 400
+    message = 'Fichier trop volumineux (max 8 Mo)'
+  } else if (String(err.message || '').includes('Format non supporté')) {
+    status = 400
+    message = err.message
   }
 
   const body = { success: false, message }
