@@ -74,11 +74,11 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
         <h1 className="text-2xl font-semibold text-[#2d5a3d]">Produits ({filtered.length})</h1>
         <Link
           to="/products/new"
-          className="hidden rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-[#2d2810] hover:opacity-95 md:inline-flex"
+          className="inline-flex w-full shrink-0 items-center justify-center rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-[#2d2810] hover:opacity-95 sm:w-auto"
         >
           + Ajouter un produit
         </Link>
@@ -189,10 +189,6 @@ export default function ProductsPage() {
           </tbody>
         </table>
       </div>
-
-      <Link to="/products/new" className="admin-fab" aria-label="Nouveau produit">
-        +
-      </Link>
 
       <ConfirmModal
         open={Boolean(deleteId)}
