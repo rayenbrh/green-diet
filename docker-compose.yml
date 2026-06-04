@@ -23,6 +23,7 @@ services:
       FRONTEND_URL: http://localhost
       ADMIN_URL: http://localhost
       TRUST_PROXY: "1"
+      PUBLIC_API_URL: http://localhost:5000
     env_file:
       - ./backend/.env
     volumes:

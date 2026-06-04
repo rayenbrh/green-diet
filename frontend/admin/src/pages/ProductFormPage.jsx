@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
 import ImageUpload from '../components/ImageUpload'
 import { api } from '../lib/axios'
+import { getUploadsBaseUrl } from '../lib/uploadsBase'
 
 function urlsToFilenames(images) {
   return (images || [])
@@ -46,7 +47,7 @@ export default function ProductFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isNew = !id
-  const serverBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/api\/?$/, '')
+  const serverBaseUrl = getUploadsBaseUrl()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm())
   const [imageData, setImageData] = useState({ existingImages: [], newFiles: [] })

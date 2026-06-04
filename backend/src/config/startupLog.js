@@ -61,6 +61,11 @@ export function logStartupSummary(opts) {
   console.log(`[boot] FRONTEND_URL (brut) : ${env.FRONTEND_URL}`)
   console.log(`[boot] ADMIN_URL (brut)    : ${env.ADMIN_URL}`)
   console.log('[boot] Images produits : stockage local sous /uploads/')
+  if (env.PUBLIC_API_URL) {
+    console.log(`[boot] ✓ PUBLIC_API_URL : ${env.PUBLIC_API_URL}`)
+  } else {
+    console.log('[boot] ⚠ PUBLIC_API_URL absent — chemins relatifs /uploads/ dans l’API')
+  }
 
   const twilio =
     envPresent(env.TWILIO_ACCOUNT_SID) &&

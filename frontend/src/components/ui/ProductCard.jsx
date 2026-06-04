@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useCart } from '../../hooks/useCart'
+import { getProductCoverImage } from '../../lib/productImage'
 import Badge from './Badge'
 
 function Stars({ rating }) {
@@ -21,6 +22,7 @@ export default function ProductCard({
 }) {
   const { addToCart } = useCart()
   const reduce = useReducedMotion()
+  const coverImage = getProductCoverImage(product)
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -79,7 +81,11 @@ export default function ProductCard({
             <Badge variant="gold">⭐ Best-seller</Badge>
           </motion.div>
         ) : null}
-        <div className="flex h-full items-center justify-center text-[52px]">{product.emoji}</div>
+        {coverImage ? (
+          <img src={coverImage} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[52px]">{product.emoji}</div>
+        )}
       </div>
       <div className="space-y-2 p-3.5" onClick={() => onOpen?.(product)}>
         <h3 className="font-cormorant text-lg leading-tight text-text-main">{product.name}</h3>

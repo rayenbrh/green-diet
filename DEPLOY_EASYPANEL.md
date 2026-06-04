@@ -23,6 +23,8 @@ Dans Easy Panel pour le service **frontend** :
 - **`ADMIN_URL`** — même valeur que **`FRONTEND_URL`** lorsque l’admin est chargée depuis **`https://frontend…/admin/`** (l’en-tête `Origin` du navigateur est celui du frontend).
 - **`CORS_ORIGINS`** — optionnel.
 - **`PORT`**, **`NODE_ENV=production`**, **`TRUST_PROXY=1`**, MongoDB, JWT : voir `backend/.env.example`.
+- **`PUBLIC_API_URL`** — URL publique HTTPS du backend **sans** `/api` (ex. `https://api.green-diet.tn`). Les réponses API renvoient des URLs d’images absolues.
+- **Volume persistant** **`/app/uploads`** sur le service backend (sinon les images disparaissent au redéploiement).
 
 Pour le service **backend** Easy Panel : contexte **racine du dépôt** `.`, Dockerfile **`backend/Dockerfile`**.
 
@@ -31,8 +33,8 @@ Pour le service **backend** Easy Panel : contexte **racine du dépôt** `.`, Doc
 Injectées au build (Vite fige les `VITE_*` dans le JS).
 
 - **`VITE_API_URL`** — ex. `https://votre-backend…/api`
-- **`VITE_BACKEND_ORIGIN`** — ex. `https://votre-backend…` (sans `/api`)
-- **`VITE_ADMIN_URL`** — URL **frontend** vers l’admin, ex. **`https://votre-frontend…/admin/`** (redirection après connexion admin depuis la boutique)
+- **`VITE_BACKEND_ORIGIN`** — ex. `https://votre-backend…` (sans `/api`) — **obligatoire** pour les prévisualisations d’images dans l’admin
+- **`VITE_ADMIN_URL`** — URL **frontend** vers l’admin, ex. **`https://votre-frontend…/admin/`**
 
 L’étape **admin** du Dockerfile compile `frontend/admin` avec le même **`VITE_API_URL`** (URL absolue vers l’API) pour que le navigateur appelle le backend depuis la page admin.
 
@@ -58,6 +60,7 @@ Si l’email existe déjà avec le rôle admin, le mot de passe n’est **pas** 
 2. Ouvrir **`https://frontend…/admin/`** → interface admin.
 3. Pas d’erreur CORS : **`ADMIN_URL`** = **`FRONTEND_URL`** quand l’admin est sur le frontend.
 4. Connexion : si cookies bloqués entre sous-domaines, **`COOKIE_SAMESITE=none`** + HTTPS.
+5. **`/admin/`** : si vous voyez « 404 · Page introuvable » (page boutique), la **PWA** a mis en cache l’ancien comportement — rebuild frontend après mise à jour, puis vider le cache / désinscrire le service worker (DevTools → Application). Le build exclut `/admin/` du fallback Workbox.
 
 ## 6. Docker Compose
 

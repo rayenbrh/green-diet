@@ -32,6 +32,8 @@ export const env = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5177',
   ADMIN_URL: process.env.ADMIN_URL || 'http://localhost:5001',
   CORS_ORIGINS: parseList(process.env.CORS_ORIGINS || ''),
+  /** URL publique HTTPS de l’API sans /api — URLs d’images absolues dans les réponses JSON. */
+  PUBLIC_API_URL: (process.env.PUBLIC_API_URL || '').trim().replace(/\/$/, ''),
   WHATSAPP_PHONE: process.env.WHATSAPP_PHONE || '+21600000000',
   STORE_NAME: process.env.STORE_NAME || 'Green Diet Sfax',
   COOKIE_SAMESITE: (process.env.COOKIE_SAMESITE || 'lax').toLowerCase() === 'none' ? 'none' : 'lax',

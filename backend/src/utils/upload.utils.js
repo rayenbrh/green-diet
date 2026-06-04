@@ -2,6 +2,7 @@ import fs from 'fs'
 import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { env } from '../config/env.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const UPLOADS_DIR = path.join(__dirname, '../../uploads')
@@ -33,7 +34,13 @@ export const upload = multer({
   limits: { fileSize: 8 * 1024 * 1024 },
 })
 
-export const getFileUrl = (filename) => (filename ? `/uploads/${filename}` : null)
+export const getFileUrl = (filename) => {
+  if (!filename) return null
+  const safe = path.basename(filename)
+  const rel = `/uploads/${safe}`
+  if (env.PUBLIC_API_URL) return `${env.PUBLIC_API_URL}${rel}`
+  return rel
+}
 
 export function deleteFile(filename) {
   if (!filename || typeof filename !== 'string') return
@@ -64,15 +71,14 @@ export function stripToFilename(img) {
   }
 }
 
+export function normalizeImageFilenames(images) {
+  if (!Array.isArray(images)) return []
+  return images.map((img) => stripToFilename(img)).filter(Boolean)
+}
+
 export function toPublicImageUrls(images) {
   if (!Array.isArray(images)) return []
-  return images.map((img) => {
-    if (!img || typeof img !== 'string') return img
-    if (img.startsWith('http')) return img
-    if (img.startsWith('/uploads/')) return img
-    const fn = stripToFilename(img)
-    return fn ? getFileUrl(fn) : img
-  })
+  return normalizeImageFilenames(images).map((fn) => getFileUrl(fn))
 }
 
 export function attachPublicImageUrls(product) {

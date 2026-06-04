@@ -8,7 +8,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { connectDb } from './config/db.js'
 import { env } from './config/env.js'
-import { corsOptions } from './config/corsOptions.js'
+import { corsOptions, getCorsAllowedOrigins } from './config/corsOptions.js'
 import { logStartupSummary } from './config/startupLog.js'
 import { apiLimiter } from './middleware/rateLimiter.middleware.js'
 import { errorHandler } from './middleware/errorHandler.middleware.js'
@@ -25,9 +25,34 @@ const app = express()
 
 if (env.TRUST_PROXY) app.set('trust proxy', 1)
 
-app.use(helmet())
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+)
 app.use(cors(corsOptions))
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
+const uploadsDir = path.join(__dirname, '../uploads')
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+  const origin = req.headers.origin
+  const allowed = getCorsAllowedOrigins()
+  if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+  } else if (env.NODE_ENV === 'development' || allowed.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  next()
+})
+app.use(
+  '/uploads',
+  express.static(uploadsDir, {
+    maxAge: env.NODE_ENV === 'production' ? '7d' : 0,
+    fallthrough: false,
+  }),
+)
 app.use(express.json({ limit: '10mb' }))
 app.use(cookieParser())
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'tiny'))

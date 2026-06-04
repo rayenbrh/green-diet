@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useCart } from '../../hooks/useCart'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { useLockBodyScroll } from '../../hooks/useLockBodyScroll'
+import { getProductCoverImage } from '../../lib/productImage'
 import Badge from './Badge'
 
 function Stars({ rating }) {
@@ -44,6 +45,8 @@ export default function ProductModal({ product, open, onClose, onFinalize }) {
   }, [step])
 
   if (!product) return null
+
+  const coverImage = getProductCoverImage(product)
 
   const categoryLabel = {
     pates: 'Pâtes',
@@ -179,18 +182,26 @@ export default function ProductModal({ product, open, onClose, onFinalize }) {
                         <Badge variant="gold">⭐ Best-seller</Badge>
                       </div>
                     )}
-                    <div className="flex h-full items-center justify-center">
-                      <motion.div
-                        initial={reduce ? false : { scale: 0.5 }}
-                        animate={reduce ? false : { scale: 1 }}
-                        transition={
-                          reduce ? {} : { type: 'spring', stiffness: 260, damping: 18 }
-                        }
-                        className="text-[88px] leading-none"
-                      >
-                        {product.emoji}
-                      </motion.div>
-                    </div>
+                    {coverImage ? (
+                      <img
+                        src={coverImage}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <motion.div
+                          initial={reduce ? false : { scale: 0.5 }}
+                          animate={reduce ? false : { scale: 1 }}
+                          transition={
+                            reduce ? {} : { type: 'spring', stiffness: 260, damping: 18 }
+                          }
+                          className="text-[88px] leading-none"
+                        >
+                          {product.emoji}
+                        </motion.div>
+                      </div>
+                    )}
                   </div>
 
                   <div

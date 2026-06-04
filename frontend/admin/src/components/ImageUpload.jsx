@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { resolveUploadSrc } from '../lib/uploadsBase'
 
 export default function ImageUpload({
   existingImages = [],
@@ -57,8 +58,6 @@ export default function ImageUpload({
   const REMOVE =
     'absolute right-1.5 top-1.5 z-[2] flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full border-0 bg-black/70 text-xs text-white'
 
-  const base = (serverBaseUrl || '').replace(/\/$/, '')
-
   return (
     <div>
       {(kept.length > 0 || newFiles.length > 0) && (
@@ -66,7 +65,7 @@ export default function ImageUpload({
           {kept.map((filename) => (
             <div key={filename} className={THUMB}>
               <img
-                src={`${base}/uploads/${filename}`}
+                src={resolveUploadSrc(filename, serverBaseUrl)}
                 alt=""
                 className="h-full w-full object-cover"
               />

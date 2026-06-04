@@ -8,7 +8,12 @@ import { User } from '../models/User.js'
 import { slugifyText } from '../utils/slugify.utils.js'
 import { buildWhatsAppUrl, buildNewOrderMessage } from '../utils/whatsapp.utils.js'
 import { cleanupUnusedUploads } from '../utils/cleanupUploads.js'
-import { attachPublicImageUrls, deleteFile, stripToFilename } from '../utils/upload.utils.js'
+import {
+  attachPublicImageUrls,
+  deleteFile,
+  normalizeImageFilenames,
+  stripToFilename,
+} from '../utils/upload.utils.js'
 
 const STATUS_FLOW = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered']
 
@@ -99,7 +104,7 @@ export async function createProduct(req, res, next) {
       weight: body.weight,
       emoji: body.emoji || '🌿',
       bgColor: body.bgColor || '#FAF8F2',
-      images: body.images || [],
+      images: normalizeImageFilenames(body.images || []),
       tags: body.tags || [],
       isAvailable: body.isAvailable !== false,
       isNew: Boolean(body.isNew),
@@ -189,6 +194,9 @@ export async function patchProduct(req, res, next) {
       return res.json({ success: true, data: product })
     }
 
+    const oldProduct = await Product.findById(req.params.id)
+    if (!oldProduct) return res.status(404).json({ success: false, message: 'Introuvable' })
+
     const body = {}
     for (const k of PRODUCT_PATCH_ALLOWED) {
       if (req.body[k] === undefined) continue
@@ -201,13 +209,22 @@ export async function patchProduct(req, res, next) {
         body[k] = Boolean(req.body[k])
       } else if (k === 'category') {
         body[k] = req.body[k]
-      } else if (k === 'images' || k === 'tags') {
+      } else if (k === 'images') {
+        body[k] = normalizeImageFilenames(Array.isArray(req.body[k]) ? req.body[k] : [])
+      } else if (k === 'tags') {
         body[k] = Array.isArray(req.body[k]) ? req.body[k] : req.body[k]
       } else {
         body[k] = req.body[k]
       }
     }
     if (body.name && !body.slug) body.slug = slugifyText(body.name)
+    if (body.images !== undefined) {
+      const newFilenames = body.images
+      const oldFilenames = (oldProduct.images || []).map(
+        (img) => stripToFilename(img) || path.basename(String(img)),
+      )
+      oldFilenames.filter((fn) => fn && !newFilenames.includes(fn)).forEach((fn) => deleteFile(fn))
+    }
     body.updatedAt = new Date()
     const product = await Product.findByIdAndUpdate(req.params.id, body, { new: true }).populate('category').lean()
     if (!product) return res.status(404).json({ success: false, message: 'Introuvable' })
@@ -222,10 +239,6 @@ export async function deleteProduct(req, res, next) {
   try {
     const p = await Product.findById(req.params.id)
     if (!p) return res.status(404).json({ success: false, message: 'Introuvable' })
-    for (const img of p.images || []) {
-      const fn = stripToFilename(img) || (typeof img === 'string' ? path.basename(img) : null)
-      if (fn) deleteFile(fn)
-    }
     await Product.findByIdAndUpdate(req.params.id, { isAvailable: false })
     res.json({ success: true, message: 'Produit désactivé' })
   } catch (e) {

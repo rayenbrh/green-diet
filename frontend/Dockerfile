@@ -7,7 +7,9 @@ COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
 COPY admin/ ./
 ARG VITE_API_URL=https://api.votredomaine.tn/api
+ARG VITE_BACKEND_ORIGIN=https://api.votredomaine.tn
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BACKEND_ORIGIN=$VITE_BACKEND_ORIGIN
 RUN npm run build
 
 FROM node:20-alpine AS shop-build
