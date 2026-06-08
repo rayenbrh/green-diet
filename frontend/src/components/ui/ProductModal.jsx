@@ -48,13 +48,7 @@ export default function ProductModal({ product, open, onClose, onFinalize }) {
 
   const coverImage = getProductCoverImage(product)
 
-  const categoryLabel = {
-    pates: 'Pâtes',
-    pains: 'Pains & Brioches',
-    farines: 'Farines',
-    biscuits: 'Biscuits',
-    epicerie: 'Épicerie',
-  }[product.category]
+  const categoryLabel = product.categoryName || product.category || ''
 
   const handleAdd = () => {
     if (step !== 'idle') return

@@ -1,16 +1,27 @@
 import { LayoutGroup, motion, useReducedMotion } from 'framer-motion'
 
-const TABS = [
-  { id: 'all', label: 'Tout' },
-  { id: 'pates', label: 'Pâtes' },
-  { id: 'pains', label: 'Pains & Brioches' },
-  { id: 'farines', label: 'Farines' },
-  { id: 'biscuits', label: 'Biscuits' },
-  { id: 'epicerie', label: 'Épicerie' },
-]
-
-export default function CategoryTabs({ value, onChange, ariaLabel = 'Catégories' }) {
+export default function CategoryTabs({
+  value,
+  onChange,
+  tabs = [{ id: 'all', label: 'Tout' }],
+  loading = false,
+  ariaLabel = 'Catégories',
+}) {
   const reduce = useReducedMotion()
+
+  if (loading) {
+    return (
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {[1, 2, 3, 4].map((k) => (
+          <div
+            key={k}
+            className="h-9 w-24 shrink-0 animate-pulse rounded-pill bg-[rgba(74,124,89,0.1)]"
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <LayoutGroup id="categoryTabs">
       <div
@@ -18,7 +29,7 @@ export default function CategoryTabs({ value, onChange, ariaLabel = 'Catégories
         aria-label={ariaLabel}
         className="scrollbar-hide flex gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] [scroll-snap-type:x_mandatory]"
       >
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const active = value === tab.id
           return (
             <button
@@ -44,7 +55,10 @@ export default function CategoryTabs({ value, onChange, ariaLabel = 'Catégories
               {active && reduce && (
                 <span className="absolute inset-0 -z-10 rounded-pill bg-leaf" />
               )}
-              <span className="relative z-10">{tab.label}</span>
+              <span className="relative z-10 whitespace-nowrap">
+                {tab.emoji ? `${tab.emoji} ` : ''}
+                {tab.label}
+              </span>
             </button>
           )
         })}

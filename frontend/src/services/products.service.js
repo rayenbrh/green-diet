@@ -2,7 +2,8 @@ import { api } from '../lib/axios'
 
 export function mapProduct(p) {
   if (!p) return null
-  const catSlug = typeof p.category === 'object' && p.category ? p.category.slug : p.category
+  const catObj = typeof p.category === 'object' && p.category ? p.category : null
+  const catSlug = catObj ? catObj.slug : p.category
   const priceNum = Number(p.price)
   return {
     ...p,
@@ -11,6 +12,8 @@ export function mapProduct(p) {
     priceNum,
     price: Number.isFinite(priceNum) ? priceNum.toFixed(3) : '0.000',
     category: catSlug,
+    categoryName: catObj?.name || '',
+    categoryEmoji: catObj?.emoji || '',
     tags: Array.isArray(p.tags) ? p.tags : [],
     rating: p.rating ?? 0,
     reviews: p.reviewCount ?? 0,
@@ -34,7 +37,7 @@ export async function getProducts(params = {}) {
 
 export async function getCategories() {
   const { data } = await api.get('/products/categories/all')
-  return data.data || []
+  return (data.data || []).filter((c) => c.isActive !== false)
 }
 
 export async function getProduct(slug) {

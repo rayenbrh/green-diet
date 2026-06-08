@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useInView } from 'react-intersection-observer'
 import * as productsApi from '../../services/products.service'
+import { useCategories } from '../../hooks/useCategories'
 import CategoryTabs from '../ui/CategoryTabs'
 import ProductCard from '../ui/ProductCard'
 import ScrollRow from '../ui/ScrollRow'
@@ -15,6 +16,12 @@ export default function ProductsSection({ onOpenProduct }) {
   const [err, setErr] = useState(null)
   const rowRef = useRef(null)
   const [ref, inView] = useInView({ threshold: 0.15, triggerOnce: true })
+  const { tabs, loading: categoriesLoading } = useCategories()
+
+  useEffect(() => {
+    if (tab === 'all') return
+    if (!categoriesLoading && !tabs.some((t) => t.id === tab)) setTab('all')
+  }, [tab, tabs, categoriesLoading])
 
   useEffect(() => {
     let cancelled = false
@@ -95,7 +102,13 @@ export default function ProductsSection({ onOpenProduct }) {
         </div>
 
         <div className="mb-8">
-          <CategoryTabs value={tab} onChange={setTab} ariaLabel="Filtrer les produits par catégorie" />
+          <CategoryTabs
+            value={tab}
+            onChange={setTab}
+            tabs={tabs}
+            loading={categoriesLoading}
+            ariaLabel="Filtrer les produits par catégorie"
+          />
         </div>
 
         {loading && (

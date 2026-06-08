@@ -7,6 +7,7 @@ import PageTransition from '../components/ui/PageTransition'
 import ProductCard from '../components/ui/ProductCard'
 import ProductModal from '../components/ui/ProductModal'
 import SectionReveal from '../components/ui/SectionReveal'
+import { useCategories } from '../hooks/useCategories'
 import * as productsApi from '../services/products.service'
 import { useCart } from '../hooks/useCart'
 
@@ -27,6 +28,12 @@ export default function Products() {
   const [selected, setSelected] = useState(null)
   const { openDrawer } = useCart()
   const [heroRef, heroInView] = useInView({ threshold: 0.2, triggerOnce: true })
+  const { tabs, loading: categoriesLoading } = useCategories()
+
+  useEffect(() => {
+    if (tab === 'all') return
+    if (!categoriesLoading && !tabs.some((t) => t.id === tab)) setTab('all')
+  }, [tab, tabs, categoriesLoading])
 
   useEffect(() => {
     let c = false
@@ -78,7 +85,13 @@ export default function Products() {
 
         <div className="sticky top-14 z-[90] border-b border-border-green bg-[rgba(253,252,248,0.88)] backdrop-blur-[16px] md:top-16">
           <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between md:px-16 lg:px-20">
-            <CategoryTabs value={tab} onChange={setTab} ariaLabel="Catégories produits" />
+            <CategoryTabs
+              value={tab}
+              onChange={setTab}
+              tabs={tabs}
+              loading={categoriesLoading}
+              ariaLabel="Catégories produits"
+            />
             <label className="relative inline-flex items-center gap-2 font-dm text-sm text-text-muted">
               <span className="sr-only">Trier</span>
               <select
