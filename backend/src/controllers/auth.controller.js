@@ -4,7 +4,7 @@ import { env } from '../config/env.js'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.utils.js'
 
 const cookieOpts = () => {
-  const sameSite = env.COOKIE_SAMESITE === 'none' ? 'none' : 'lax'
+  const sameSite = env.COOKIE_SAMESITE
   return {
     httpOnly: true,
     secure: sameSite === 'none' || env.NODE_ENV === 'production',
@@ -12,6 +12,16 @@ const cookieOpts = () => {
     path: '/',
     maxAge: 30 * 24 * 60 * 60 * 1000,
   }
+}
+
+function clearRefreshCookie(res) {
+  const sameSite = env.COOKIE_SAMESITE
+  res.clearCookie('refreshToken', {
+    path: '/',
+    httpOnly: true,
+    secure: sameSite === 'none' || env.NODE_ENV === 'production',
+    sameSite,
+  })
 }
 
 function userPayload(u) {
@@ -108,7 +118,7 @@ export async function logout(req, res, next) {
         /* ignore */
       }
     }
-    res.clearCookie('refreshToken', { path: '/' })
+    clearRefreshCookie(res)
     res.json({ success: true, message: 'Déconnecté' })
   } catch (e) {
     next(e)
@@ -122,7 +132,7 @@ export async function refresh(req, res, next) {
     const { sub } = verifyRefreshToken(token)
     const user = await User.findById(sub).select('+refreshToken')
     if (!user || user.refreshToken !== token) {
-      res.clearCookie('refreshToken', { path: '/' })
+      clearRefreshCookie(res)
       return res.status(401).json({ success: false, message: 'Session invalide' })
     }
     const refreshed = await User.findById(user._id).lean()

@@ -19,12 +19,12 @@ Dans Easy Panel pour le service **frontend** :
 
 ## 2. Variables — backend
 
-- **`FRONTEND_URL`** — origine de la boutique (ex. `https://dokanzemni-frontend-….easypanel.host`).
-- **`ADMIN_URL`** — même valeur que **`FRONTEND_URL`** lorsque l’admin est chargée depuis **`https://frontend…/admin/`** (l’en-tête `Origin` du navigateur est celui du frontend).
-- **`CORS_ORIGINS`** — optionnel.
+- **`SITE_URL`** — raccourci : `https://green-diet.tn` (boutique + admin sur le même domaine).
+- **`FRONTEND_URL`** / **`ADMIN_URL`** — identiques à **`SITE_URL`** si l’admin est sur `/admin/`.
+- **`PUBLIC_API_URL`** — URL HTTPS du backend **sans** `/api`.
+- **`CORS_ORIGINS`** — optionnel (`https://www.green-diet.tn`, etc.).
 - **`PORT`**, **`NODE_ENV=production`**, **`TRUST_PROXY=1`**, MongoDB, JWT : voir `backend/.env.example`.
-- **`PUBLIC_API_URL`** — URL publique HTTPS du backend **sans** `/api` (ex. `https://api.green-diet.tn`). Les réponses API renvoient des URLs d’images absolues.
-- **Volume persistant** **`/app/uploads`** sur le service backend (sinon les images disparaissent au redéploiement).
+- **Volume persistant** **`/app/uploads`** sur le service backend.
 
 Pour le service **backend** Easy Panel : contexte **racine du dépôt** `.`, Dockerfile **`backend/Dockerfile`**.
 
@@ -58,8 +58,8 @@ Si l’email existe déjà avec le rôle admin, le mot de passe n’est **pas** 
 
 1. `GET …/api/health` sur le backend → `ok`.
 2. Ouvrir **`https://frontend…/admin/`** → interface admin.
-3. Pas d’erreur CORS : **`ADMIN_URL`** = **`FRONTEND_URL`** quand l’admin est sur le frontend.
-4. Connexion : si cookies bloqués entre sous-domaines, **`COOKIE_SAMESITE=none`** + HTTPS.
+3. Pas d’erreur CORS : au minimum **`SITE_URL=https://green-diet.tn`** (ou `FRONTEND_URL` + `ADMIN_URL` identiques). L’`Origin` du navigateur sur `/admin/` est **`https://green-diet.tn`**, pas l’URL Easy Panel du backend.
+4. Connexion admin cross-domaine : **`PUBLIC_API_URL`** pointe vers le backend ; cookies **`SameSite=none`** auto si hôtes différents.
 5. **`/admin/`** : si vous voyez « 404 · Page introuvable » (page boutique), la **PWA** a mis en cache l’ancien comportement — rebuild frontend après mise à jour, puis vider le cache / désinscrire le service worker (DevTools → Application). Le build exclut `/admin/` du fallback Workbox.
 
 ## 6. Docker Compose

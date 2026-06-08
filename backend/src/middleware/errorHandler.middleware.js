@@ -1,7 +1,9 @@
 import mongoose from 'mongoose'
 import { env } from '../config/env.js'
+import { applyCorsHeaders } from '../config/corsOptions.js'
 
 export function errorHandler(err, req, res, _next) {
+  applyCorsHeaders(req, res)
   console.error(err)
   let status = err.statusCode || 500
   let message = err.message || 'Erreur serveur'

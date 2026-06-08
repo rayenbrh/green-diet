@@ -60,6 +60,12 @@ export function logStartupSummary(opts) {
   }
   console.log(`[boot] FRONTEND_URL (brut) : ${env.FRONTEND_URL}`)
   console.log(`[boot] ADMIN_URL (brut)    : ${env.ADMIN_URL}`)
+  if (env.SITE_URL) console.log(`[boot] SITE_URL (brut)     : ${env.SITE_URL}`)
+  if (env.COOKIE_SAMESITE === 'none') {
+    console.log('[boot] ✓ Cookies cross-site : SameSite=none (HTTPS requis)')
+  } else if (env.PUBLIC_API_URL && env.FRONTEND_URL) {
+    console.log('[boot] ℹ️ Cookies SameSite=lax — OK si boutique et API sur le même site')
+  }
   console.log('[boot] Images produits : stockage local sous /uploads/')
   if (env.PUBLIC_API_URL) {
     console.log(`[boot] ✓ PUBLIC_API_URL : ${env.PUBLIC_API_URL}`)

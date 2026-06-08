@@ -8,7 +8,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { connectDb } from './config/db.js'
 import { env } from './config/env.js'
-import { corsOptions, getCorsAllowedOrigins } from './config/corsOptions.js'
+import { corsOptions, getCorsAllowedOrigins, isOriginAllowed } from './config/corsOptions.js'
 import { logStartupSummary } from './config/startupLog.js'
 import { apiLimiter } from './middleware/rateLimiter.middleware.js'
 import { errorHandler } from './middleware/errorHandler.middleware.js'
@@ -36,10 +36,9 @@ const uploadsDir = path.join(__dirname, '../uploads')
 app.use('/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
   const origin = req.headers.origin
-  const allowed = getCorsAllowedOrigins()
   if (!origin) {
     res.setHeader('Access-Control-Allow-Origin', '*')
-  } else if (env.NODE_ENV === 'development' || allowed.includes(origin)) {
+  } else if (isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Vary', 'Origin')
   }
