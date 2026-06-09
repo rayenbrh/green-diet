@@ -1,6 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 import { resolveUploadSrc } from '../lib/uploadsBase'
 
+const SIZE_THRESHOLD = 2 * 1024 * 1024 // 2MB — compress only above this
+const MAX_DIM = 2000
+const QUALITY = 0.9
+
+function compressIfNeeded(file) {
+  if (file.size <= SIZE_THRESHOLD) return Promise.resolve(file)
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) { height = Math.round((height * MAX_DIM) / width); width = MAX_DIM }
+        else { width = Math.round((width * MAX_DIM) / height); height = MAX_DIM }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      canvas.toBlob(
+        (blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg', QUALITY,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+    img.src = url
+  })
+}
+
 export default function ImageUpload({
   existingImages = [],
   onChange,
@@ -23,7 +52,7 @@ export default function ImageUpload({
     onChange?.({ existingImages: k, newFiles: f })
   }
 
-  const handleFiles = (files) => {
+  const handleFiles = async (files) => {
     const arr = Array.from(files || [])
     const tooBig = arr.filter((f) => f.size > 20 * 1024 * 1024)
     if (tooBig.length) {
@@ -34,7 +63,7 @@ export default function ImageUpload({
       ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(f.type),
     )
     const space = maxImages - total
-    const toAdd = allowed.slice(0, space)
+    const toAdd = await Promise.all(allowed.slice(0, space).map(compressIfNeeded))
     const newPreviews = toAdd.map((f) => URL.createObjectURL(f))
     const updatedFiles = [...newFiles, ...toAdd]
     const updatedPreviews = [...previews, ...newPreviews]
