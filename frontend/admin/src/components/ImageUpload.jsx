@@ -25,6 +25,11 @@ export default function ImageUpload({
 
   const handleFiles = (files) => {
     const arr = Array.from(files || [])
+    const tooBig = arr.filter((f) => f.size > 20 * 1024 * 1024)
+    if (tooBig.length) {
+      alert(`${tooBig.map((f) => f.name).join(', ')} dépasse 20 Mo. Veuillez réduire la taille.`)
+      return
+    }
     const allowed = arr.filter((f) =>
       ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(f.type),
     )
@@ -114,7 +119,7 @@ export default function ImageUpload({
             Déposer les images ici
           </div>
           <div className="mt-1 text-xs italic text-[#9ca3af]">
-            ou cliquer · {maxImages - total} emplacement(s) · JPEG, PNG, WebP · max 8 Mo
+            ou cliquer · {maxImages - total} emplacement(s) · JPEG, PNG, WebP · max 20 Mo
           </div>
           <input
             ref={inputRef}

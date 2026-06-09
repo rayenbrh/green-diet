@@ -26,7 +26,7 @@ export function errorHandler(err, req, res, _next) {
     message = 'Session invalide ou expirée'
   } else if (err.code === 'LIMIT_FILE_SIZE') {
     status = 400
-    message = 'Fichier trop volumineux (max 8 Mo)'
+    message = 'Fichier trop volumineux (max 20 Mo)'
   } else if (String(err.message || '').includes('Format non supporté')) {
     status = 400
     message = err.message
