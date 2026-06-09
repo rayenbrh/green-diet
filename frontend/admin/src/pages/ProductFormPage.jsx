@@ -53,6 +53,7 @@ export default function ProductFormPage() {
   const [imageData, setImageData] = useState({ existingImages: [], newFiles: [] })
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [showDel, setShowDel] = useState(false)
 
   useEffect(() => {
@@ -131,14 +132,20 @@ export default function ProductFormPage() {
     if (!form.description.trim()) return toast.error('Description requise')
     if (!Number.isFinite(Number(form.price)) || Number(form.price) < 0) return toast.error('Prix invalide')
     setSaving(true)
+    setUploadProgress(0)
+    const onUploadProgress = (e) => {
+      if (e.total) setUploadProgress(Math.round((e.loaded / e.total) * 100))
+    }
     try {
       const fd = buildFormData()
       if (isNew) {
-        const { data } = await api.post('/admin/products', fd)
+        const { data } = await api.post('/admin/products', fd, { onUploadProgress })
+        setUploadProgress(100)
         toast.success('Produit créé')
         navigate(`/products/${data.data._id}`, { replace: true })
       } else {
-        await api.patch(`/admin/products/${id}`, fd)
+        await api.patch(`/admin/products/${id}`, fd, { onUploadProgress })
+        setUploadProgress(100)
         toast.success('Enregistré')
         const { data: refetch } = await api.get(`/admin/products/${id}`)
         setImageData({ existingImages: urlsToFilenames(refetch.data.images), newFiles: [] })
@@ -147,6 +154,7 @@ export default function ProductFormPage() {
       toast.error(err.response?.data?.message || 'Erreur sauvegarde')
     } finally {
       setSaving(false)
+      setTimeout(() => setUploadProgress(0), 800)
     }
   }
 
@@ -335,6 +343,20 @@ export default function ProductFormPage() {
               </label>
             ))}
           </div>
+          {saving && (
+            <div className="rounded-xl border border-[rgba(74,124,89,0.12)] bg-white p-4 shadow-sm">
+              <div className="mb-1.5 flex items-center justify-between text-xs text-[#6b7280]">
+                <span>{uploadProgress < 100 ? 'Envoi des images…' : 'Sauvegarde…'}</span>
+                <span className="font-semibold text-[#2d5a3d]">{uploadProgress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-[rgba(74,124,89,0.12)]">
+                <div
+                  className="h-full rounded-full bg-[#2d5a3d] transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
